@@ -1,54 +1,74 @@
-ifeq (${PORTS},) 
-    PORTS:=/home/uki/dev/ports 
-    $(warning PORTS variable is unset, using default: "$(PORTS)" )
-endif
-ifeq ($(MAKE),)
-    MAKE:=make
-endif
-
 .DEFAULT_GOAL=package
-P=${PORTS}/$(name)
-files=$(foreach f, $(source), $(notdir $(f)) )
-unpack=$(addprefix unpack., $(files) )
-work=$(P)/work
+.PHONY: help download prepare build package clean install distclean
 
-.PHONY: help download prepare build package clean install $(unpack)
-
-
+##############
+#    HELP    #
 help:
 	@echo todo
+
+##############
+#  DOWNLOAD  #
+files=$(foreach f, $(source), $(notdir $(f)))
 
 download: $(files)
 
 %.tar.bz2 %.tar.gz %tar.xz %.zip:
-	wget -c -O "$(P)/$(@).tmp" $(filter %$(@),$(source)) \ 
-	&& mv "$(P)/$(@).tmp" "$(P)/$(@)"
+	wget -c -O "$(@).tmp" "$(filter %$(@),$(source))"
+	@mv "$(@).tmp" "$(@)"
 
+##############
+#   PREPARE  #
+unpack=$(addprefix unpack.,$(files))
+W=work
 
 prepare: $(unpack)
 
-unpack.%.tar.bz2: %.tar.bz2 "$(work)"
-	bzip2 -d -c "$<" | tar -x -C "$(work)" -f -
+unpack.%.tar.bz2: %.tar.bz2 $(W)
+	bzip2 -d -c $< | tar -x -C $(W) -f -
 
-unpack.%.tar.gz: %.tar.gz "$(work)"
-	gzip  -d -c "$<" | tar -x -C "$(work)" -f -
+unpack.%.tar.gz: %.tar.gz $(W)
+	gzip  -d -c $< | tar -x -C $(W) -f -
 
-unpack.%.tar.xz: %.tar.xz "$(work)"
-	xz    -d -c "$(subst unpack,,$(@) )" | tar -x -C "$(work)" -f -
+unpack.%.tar.xz: %.tar.xz $(W)
+	xz    -d -c $< | tar -x -C $(W) -f -
 
-unpack.%.zip: %.zip "$(work)" 
-	@unzip -d "$(work)" "$<"
+unpack.%.zip: %.zip $(W)
+	unzip -d $(W) $<
 
-$(work):
-	mkdir -p "$(work)"
+$(W):
+	@mkdir -p $(W)
 
 
-build: prepare
+##############
+#    BUILD   #
+D=dest
 
-package: build
+build: prepare $(D)
 
+$(D):
+	@mkdir -p $(D)
+
+##############
+#   PACKAGE  #
+pkgext=pkg.tar.xz
+packagename=$(name)-$(version)-$(build).$(pkgext)
+
+package: $(packagename)
+
+$(packagename): build
+	@tar -cpf - $(D)/* | xz > $(packagename)
+
+##############
+#   INSTALL  #
 install: package
+	@echo todo
 
+##############
+#    CLEAN   #
 clean:
-	@rm -rf $(work)
+	@rm -rf $(W)
+	@rm -rf $(D)
+
+distclean: clean
+	@-rm -rf $(files) $(packagename)
 
