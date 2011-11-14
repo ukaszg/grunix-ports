@@ -1,5 +1,5 @@
 .DEFAULT_GOAL=package
-.PHONY: help download prepare build package clean install distclean
+.PHONY: help prepare build package clean install distclean
 
 ##############
 #    HELP    #
@@ -10,30 +10,35 @@ help:
 #  DOWNLOAD  #
 files=$(foreach f, $(source), $(notdir $(f)))
 
-download: $(files)
+download:: $(files)
 
 %.tar.bz2 %.tar.gz %tar.xz %.zip:
-	wget -c -O "$(@).tmp" "$(filter %$(@),$(source))"
-	@mv "$(@).tmp" "$(@)"
+	@wget -c -O "$(@).part" "$(filter %$(@),$(source))"
+	@mv "$(@).part" "$(@)"
+	@touch "$(@)"
 
 ##############
 #   PREPARE  #
-unpack=$(addprefix unpack.,$(files))
-W=work
+W=./work
+unpack=$(addprefix $(W)/.unpack.,$(files))
 
 prepare: $(unpack)
 
-unpack.%.tar.bz2: %.tar.bz2 $(W)
+$(W)/.unpack.%.tar.bz2: %.tar.bz2 $(W)
 	bzip2 -d -c $< | tar -x -C $(W) -f -
+	@touch "$(@)"
 
-unpack.%.tar.gz: %.tar.gz $(W)
+$(W)/.unpack.%.tar.gz: %.tar.gz $(W)
 	gzip  -d -c $< | tar -x -C $(W) -f -
+	@touch "$(@)"
 
-unpack.%.tar.xz: %.tar.xz $(W)
+$(W)/.unpack.%.tar.xz: %.tar.xz $(W)
 	xz    -d -c $< | tar -x -C $(W) -f -
+	@touch "$(@)"
 
-unpack.%.zip: %.zip $(W)
+$(W)/.unpack.%.zip: %.zip $(W)
 	unzip -d $(W) $<
+	@touch "$(@)"
 
 $(W):
 	@mkdir -p $(W)
@@ -41,7 +46,8 @@ $(W):
 
 ##############
 #    BUILD   #
-D=dest
+d=dest
+w=$W/$(name)-$(version)
 
 build: prepare $(D)
 
