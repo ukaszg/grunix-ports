@@ -49,10 +49,10 @@ $(W):
 d=dest
 w=$W/$(name)-$(version)
 
-build: prepare $(D)
+build: prepare $(d)
 
-$(D):
-	@mkdir -p $(D)
+$(d):
+	@mkdir -p $(d)
 
 ##############
 #   PACKAGE  #
