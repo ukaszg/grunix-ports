@@ -19,7 +19,7 @@ download:: $(files)
 
 ##############
 #   PREPARE  #
-W=./work
+W=$(CURDIR)/work
 unpack=$(addprefix $(W)/.unpack.,$(files))
 
 prepare: $(unpack)
@@ -46,13 +46,15 @@ $(W):
 
 ##############
 #    BUILD   #
-d=dest
 w=$W/$(name)-$(version)
+d=$(CURDIR)/dest
+#advanced anti-fingerfart measures
+D=d
 
-build: prepare $(d)
+build: prepare $d
 
-$(d):
-	@mkdir -p $(d)
+$d:
+	@mkdir -p $d
 
 ##############
 #   PACKAGE  #
@@ -62,7 +64,7 @@ packagename=$(name)-$(version)-$(build).$(pkgext)
 package: $(packagename)
 
 $(packagename): build
-	@tar -cpf - $(D)/* | xz > $(packagename)
+	cd $d && tar -cpf - * | xz > $(CURDIR)/$(packagename)
 
 ##############
 #   INSTALL  #
@@ -72,8 +74,8 @@ install: package
 ##############
 #    CLEAN   #
 clean:
-	@rm -rf $(W)
-	@rm -rf $(D)
+	@rm -rf $W
+	@rm -rf $d
 
 distclean: clean
 	@-rm -rf $(files) $(packagename)
