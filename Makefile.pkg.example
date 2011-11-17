@@ -7,7 +7,8 @@ source=http://example.net/$(name)-$(version).tar.gz
 include ../Makefile
 
 build:
-	cd $w && ./configure --prefix=/ \ 
+	cd $w && ./configure \ 
+		--prefix=/ \ 
 		--disable-shared \ 
 		--disable-nls \ 
 		--mandir=/var/man
