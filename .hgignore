@@ -4,4 +4,6 @@
 .*\.zip
 .*~
 .*\.swp
-.*/work/.*
+work
+dest
+\.installed
