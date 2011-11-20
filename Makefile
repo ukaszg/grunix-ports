@@ -65,17 +65,9 @@ $d:
 pkgext=pkg.tar.gz
 packagename=$(name)-$(version)-$(build).$(pkgext)
 
-# `make -B package` if you want to rebuild it.
 package:: $(packagename)
 
 $(packagename):
-# If I put `build` as a dependancy,
-# the package gets built each time the target is invoked,
-# even if $(packagename) is recent.
-# I'd like to not use recursive make here. Any ideas?
-# `touch $d/.build_finished` is a bad idea, I'd like to
-# not have to remember it whilst writing packages.
-# This stuff is optimized for laziness ;)
 	@$(MAKE) build
 	cd $d && tar -cpf - * | gzip > $(CURDIR)/$(packagename)
 
