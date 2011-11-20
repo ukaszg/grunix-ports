@@ -1,6 +1,6 @@
 .PHONY: help build clean install nuke list
 
-.DEFAULT_GOAL=list
+.DEFAULT_GOAL=package
 
 ##############
 #    HELP    #
@@ -70,14 +70,10 @@ package:: $(packagename)
 $(packagename):
 	@$(MAKE) build
 	cd $d && tar -cpf - * | gzip > $(CURDIR)/$(packagename)
+	@$(info # $(packagename) was built successfully.)
 
 list: $(packagename)
-# I'd like to see it, when it pops out after a wall of text.
-	@$(info  )
-	@$(info  )
-	@$(info # $(packagename) was built successfully.)
 	@$(info # ====== Package contents ====== )
-	@$(info  )
 	@tar tf "$(packagename)" | grep -e '.*[^/]$$'
 
 ##############
@@ -96,6 +92,7 @@ is_it_already_installed?:
 clean:
 	@-rm -rf $W
 	@-rm -rf $d
+	@-rm -rf *.tar.gz.part *.tar.bz2.part *.tar.xz.part *.zip.part
 
 nuke: clean
 	@-rm -rf $(files) $(packagename)
