@@ -84,7 +84,7 @@ install: is_it_already_installed?
 
 is_it_already_installed?:
 # how do you break that line, while not breaking the script?
-	@test ! -f $(package_installed) || echo 'Package already installed. Did you mean `update`?' && exit 1
+	@test ! -f $(package_installed) || echo 'Package already installed. Did you mean `update`?' >&2 && exit 1
 
 
 ##############
