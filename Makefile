@@ -74,7 +74,7 @@ $(packagename):
 
 list: $(packagename)
 	@$(info # ====== Package contents ====== )
-	@tar tf "$(packagename)" | grep -e '.*[^/]$$'
+	@gzip -d -c "$(packagename)" | tar tf - | grep -e '.*[^/]$$'
 
 ##############
 #   INSTALL  #
