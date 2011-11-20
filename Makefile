@@ -58,13 +58,13 @@ $d:
 
 ##############
 #   PACKAGE  #
-pkgext=pkg.tar.xz
+pkgext=pkg.tar.gz
 packagename=$(name)-$(version)-$(build).$(pkgext)
 
 package: $(packagename)
 
 $(packagename): build
-	cd $d && tar -cpf - * | xz > $(CURDIR)/$(packagename)
+	cd $d && tar -cpf - * | gzip > $(CURDIR)/$(packagename)
 
 ##############
 #   INSTALL  #
