@@ -1,13 +1,15 @@
-.PHONY: help build clean install nuke list
+.PHONY: help clean nuke build install inst list
 
 .DEFAULT_GOAL=install
 BUILD_ROOT?=$(CURDIR)
-INSTALL_TO?=/
+LOCAL_INSTALL_TO?="${HOME}/.local"
+INSTALL_TO?=$(shell test `id -u` -eq 0 && echo "/" || echo $(LOCAL_INSTALL_TO))
 
 ##############
 #    HELP    #
 help:
-	@echo todo
+	@echo $(INSTALL_TO)
+	test "x`id -u`"="x0" && echo "/" || echo "${HOME}/.local"
 
 ##############
 #  DOWNLOAD  #
@@ -92,36 +94,29 @@ attr=user.package
 
 inst install:: $(inst_idx)
 
-$(inst_idx): set_properties
-	@mv -v "$(idir)/*" "$(INSTALL_TO)/"
-	@sed -i -e "s#$(idir)##" "$@$(part)"
-	@-rm -rf $(idir)
-	@mv "$@$(part)" "$@"
-	@$(info # installed: $(packagename))
-
-set_properties: check_conflicts
-	@$(info # signing files with package info: $(packagename))
-	@for i in `cat "$(inst_idx)$(part)"`;do \
-		setfattr -n $(attr).md5 -v `md5sum "$$i"|cut -d' ' -f1` "$$i"; \
-		setfattr -n $(attr).name -v $(name) "$$i"; \
-		setfattr -n $(attr).version -v $(version) "$$i"; \
-	done
-	@$(info )
-
-check_conflicts: $(inst_idx)$(part)
+$(inst_idx): $(inst_idx)$(part)
 	@$(info # checking for conflicts in [$(INSTALL_TO)]: $(packagename))
 	@for i in `cat "$<" | sed -e "s#$(idir)##"`;do \
 		if test -f "$(INSTALL_TO)/$$i"; then \
 		printf "# ERR: $(packagename): file [$$i] already exits" >&2; exit 1; \
 		fi; \
 	done
-	@$(info # no conflicts: $(packagename))
+	@$(info # signing files with package info: $(packagename))
+	@for i in `cat "$<"`;do \
+		setfattr -n $(attr).md5 -v `md5sum "$$i"|cut -d' ' -f1` "$$i"; \
+		setfattr -n $(attr).name -v $(name) "$$i"; \
+		setfattr -n $(attr).version -v $(version) "$$i"; \
+	done
+	@$(info # installing: $(packagename))
+	@mv -v "$(idir)/*" "$(INSTALL_TO)/"
+	@sed -i -e "s#$(idir)##" "$<"
+	@-rm -rf $(idir)
+	@mv "$<" "$@"
 
-$(inst_idx)$(part): unpack_package
-	@find -H $(idir) -type f > "$@"
-
-unpack_package: $(idir) $(pkg_path)
+$(inst_idx)$(part): $(idir) $(pkg_path)
 	@gzip -d -c $(pkg_path) | tar -x -p -C $< -f -
+	@find -H $< -type f > "$@$(part)"
+	@mv "$@$(part)" "$@"
 
 $(idir):
 	@mkdir -p "$@$(part)"
