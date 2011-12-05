@@ -1,6 +1,8 @@
 .PHONY: help build clean install nuke list
 
-.DEFAULT_GOAL=package
+.DEFAULT_GOAL=install
+BUILD_ROOT?=$(CURDIR)
+INSTALL_TO?=/
 
 ##############
 #    HELP    #
@@ -9,40 +11,42 @@ help:
 
 ##############
 #  DOWNLOAD  #
-files=$(foreach f, $(source), $(notdir $(f)))
+part=.part
+filenames=$(foreach f, $(source), $(notdir $(f)) )
+files=$(addprefix $(BUILD_ROOT)/, $(filenames) )
 
-download:: $(files)
+dl download:: $(files)
 
-%.tar.bz2 %.tar.gz %tar.xz %.zip:
-	@wget -c -O "$@.part" "$(filter %$@,$(source))"
-	@mv "$@.part" "$@"
-	@touch "$@"
+%.tar.bz2 %.tar.gz %.tar.xz %.zip:
+	@wget -c -O "$@$(part)" "$(filter %$(notdir $@),$(source))"
+	@mv "$@$(part)" "$@"
 
 ##############
 #   PREPARE  #
 # build directory
-W=$(CURDIR)/work
-unpack=$(addprefix $W/.unpack.,$(files))
+W=$(BUILD_ROOT)/work
+unpack=$(addprefix $W/.unpack.,$(filenames))
 
 prepare:: $(unpack)
+	$(info preparing build:)
 
 $W:
 	@mkdir -p $@
 
-$W/.unpack.%.tar.bz2: %.tar.bz2 $W
-	bzip2 -d -c $< | tar -x -C $W -f -
+$W/.unpack.%.tar.bz2: $(BUILD_ROOT)/%.tar.bz2 $W
+	@bzip2 -d -c $< | tar -x -C $W -f -
 	@touch "$@"
 
-$W/.unpack.%.tar.gz: %.tar.gz $W
-	gzip  -d -c $< | tar -x -C $W -f -
+$W/.unpack.%.tar.gz: $(BUILD_ROOT)/%.tar.gz $W
+	@gzip  -d -c $< | tar -x -C $W -f -
 	@touch "$@"
 
-$W/.unpack.%.tar.xz: %.tar.xz $W
-	xz    -d -c $< | tar -x -C $W -f -
+$W/.unpack.%.tar.xz: $(BUILD_ROOT)/%.tar.xz $W
+	@xz    -d -c $< | tar -x -C $W -f -
 	@touch "$@"
 
-$W/.unpack.%.zip: %.zip $W
-	unzip -d $W $<
+$W/.unpack.%.zip: $(BUILD_ROOT)/%.zip $W
+	@unzip -d $W $<
 	@touch "$@"
 
 ##############
@@ -51,49 +55,87 @@ $W/.unpack.%.zip: %.zip $W
 # It's nice to type less, most of the time. Do not use it in this file.
 w=$W/$(name)-$(version)
 
-d=$(CURDIR)/dest
-# advanced anti-fingerfart measures
-D=d
+d=$(BUILD_ROOT)/dest
+D=d # advanced anti-fingerfart measures
 
 build: prepare $d
 
 $d:
-	@mkdir -p $@
+	@mkdir -p "$@$(part)"
+	@chmod 0700 "$@$(part)"
+	@mv "$@$(part)" "$@"
 
 ##############
 #   PACKAGE  #
-pkgext=pkg.tar.gz
-packagename=$(name)-$(version)-$(build).$(pkgext)
+pkgext=pkg
+packagename=$(name)-$(version).$(build).$(pkgext)
+pkg_path=$(BUILD_ROOT)/$(packagename)
 
-package:: $(packagename)
+pkg package:: $(pkg_path)
 
-$(packagename):
+$(pkg_path):
+	@$(info # building: $(packagename))
 	@$(MAKE) build
-	cd $d && tar -cpf - * | gzip > $(CURDIR)/$(packagename)
-	@$(info # $(packagename) was built successfully.)
+	@cd $d && tar -cpf - ./* | gzip > $(pkg_path)$(part)
+	@rm -rf $d $W
+	@mv "$(pkg_path)$(part)" "$(pkg_path)"
+	@$(info # created: $(packagename))
 
-list: $(packagename)
-	@$(info # ====== Package contents ====== )
-	@gzip -d -c "$(packagename)" | tar tf - | grep -e '.*[^/]$$'
+ls list: $(pkg_path)
+	@gzip -d -c "$(pkg_path)" | tar tf - | grep -e '.*[^/]$$'
 
 ##############
 #   INSTALL  #
-package_installed=$(CURDIR)/.installed
+inst_idx=$(BUILD_ROOT)/.installed
+idir=$(BUILD_ROOT)/install_tmp_dir
+attr=user.package
 
-install: is_it_already_installed?
+inst install:: $(inst_idx)
 
-is_it_already_installed?:
-# how do you break that line, while not breaking the script?
-	@test ! -f $(package_installed) || echo 'Package already installed. Did you mean `update`?' >&2 && exit 1
+$(inst_idx): set_properties
+	@mv -v "$(idir)/*" "$(INSTALL_TO)/"
+	@sed -i -e "s#$(idir)##" "$@$(part)"
+	@-rm -rf $(idir)
+	@mv "$@$(part)" "$@"
+	@$(info # installed: $(packagename))
 
+set_properties: check_conflicts
+	@$(info # signing files with package info: $(packagename))
+	@for i in `cat "$(inst_idx)$(part)"`;do \
+		setfattr -n $(attr).md5 -v `md5sum "$$i"|cut -d' ' -f1` "$$i"; \
+		setfattr -n $(attr).name -v $(name) "$$i"; \
+		setfattr -n $(attr).version -v $(version) "$$i"; \
+	done
+	@$(info )
+
+check_conflicts: $(inst_idx)$(part)
+	@$(info # checking for conflicts in [$(INSTALL_TO)]: $(packagename))
+	@for i in `cat "$<" | sed -e "s#$(idir)##"`;do \
+		if test -f "$(INSTALL_TO)/$$i"; then \
+		printf "# ERR: $(packagename): file [$$i] already exits" >&2; exit 1; \
+		fi; \
+	done
+	@$(info # no conflicts: $(packagename))
+
+$(inst_idx)$(part): unpack_package
+	@find -H $(idir) -type f > "$@"
+
+unpack_package: $(idir) $(pkg_path)
+	@gzip -d -c $(pkg_path) | tar -x -p -C $< -f -
+
+$(idir):
+	@mkdir -p "$@$(part)"
+	@chmod 0700 "$@$(part)"
+	@mv "$@$(part)" "$@"
 
 ##############
 #    CLEAN   #
 clean:
-	@-rm -rf $W
-	@-rm -rf $d
-	@-rm -rf *.tar.gz.part *.tar.bz2.part *.tar.xz.part *.zip.part
+	@$(info # cleaning: $(packagename))
+	@-rm -rf $d $d$(part) $W $W$(part) $(idir) $(idir)$(part) $(inst_idx)$(part)
+	@-rm -rf *.tar.gz$(part) *.tar.bz2$(part) *.tar.xz$(part) *.zip$(part)
 
 nuke: clean
-	@-rm -rf $(files) $(packagename)
+	@$(info # nuking: $(packagename))
+	@-rm -rf $(files) $(pkg_path)
 
