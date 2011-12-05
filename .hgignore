@@ -1,9 +1,12 @@
-.*\.tar\.gz
-.*\.tar\.bz2
-.*\.tar\.xz
-.*\.zip
-.*~
-.*\.swp
-work
-dest
-\.installed
+syntax: glob
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.zip
+*.pkg
+*~
+*.swp
+*/work/*
+*/dest/*
+*/install_tmp_dir/*
+.installed
