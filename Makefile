@@ -30,7 +30,7 @@ unpack=$(addprefix $W/.unpack.,$(filenames))
 prepare:: $(unpack)
 
 $W:
-	@mkdir -p $@
+	@install -m 700 -d "$@"
 
 $W/.unpack.%.tar.bz2: $(BUILD_ROOT)/%.tar.bz2 $W
 	@bzip2 -d -c "$<" | tar -x -C "$W" -f -
@@ -45,7 +45,7 @@ $W/.unpack.%.tar.xz: $(BUILD_ROOT)/%.tar.xz $W
 	@touch "$@"
 
 $W/.unpack.%.zip: $(BUILD_ROOT)/%.zip $W
-	@unzip -d $W "$<"
+	@unzip -d "$W" "$<"
 	@touch "$@"
 
 ##############
@@ -58,9 +58,7 @@ d=$(BUILD_ROOT)/dest
 build: prepare $d
 
 $d:
-	@mkdir -p "$@$(part)"
-	@chmod 0700 "$@$(part)"
-	@mv "$@$(part)" "$@"
+	@install -m 700 -d "$@"
 
 ##############
 #   PACKAGE  #
@@ -74,7 +72,7 @@ $(pkg_path):
 	@printf "# building: $(packagename)\n"
 	@$(MAKE) build
 	@cd "$d" && tar -cpf - ./* | gzip > "$(pkg_path)$(part)"
-	@rm -rf "$d" "$W"
+	@-rm -rf "$d" "$W"
 	@mv "$(pkg_path)$(part)" "$(pkg_path)"
 	@printf "# created: $(packagename)\n"
 
@@ -115,16 +113,19 @@ $(inst_idx)$(part): $(idir) $(pkg_path)
 	@mv "$@$(part)" "$@"
 
 $(idir):
-	@mkdir -p "$@$(part)"
-	@chmod 0700 "$@$(part)"
-	@mv "$@$(part)" "$@"
+	@install -m 700 -d "$@"
+
+##############
+#   REMOVE   #
+uninstall:
+
 
 ##############
 #    CLEAN   #
 clean:
+	@-rm -rf *.tar.gz$(part) *.tar.bz2$(part) *.tar.xz$(part) *.zip$(part)
 	@-rm -rf "$d" "$d$(part)" "$W" "$W$(part)" "$(idir)" "$(idir)$(part)" \
 		"$(inst_idx)$(part)"
-	@-rm -rf *.tar.gz$(part) *.tar.bz2$(part) *.tar.xz$(part) *.zip$(part)
 
 nuke: clean
 	@-rm -rf $(files) $(pkg_path)
