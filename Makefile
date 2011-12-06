@@ -90,7 +90,7 @@ inst install:: $(inst_idx)
 $(inst_idx): $(inst_idx)$(part)
 	@for i in `cat "$<" | sed -e "s#$(idir)#$(INSTALL_TO)#"`;do \
 		if test -f "$$i"; then \
-			printf "# error, can't install: $(packagename) \n" >&2; \
+			printf "# sorry, can't install: $(packagename) \n" >&2; \
 			printf " \tdoing so would overwrite existing file [$$i]\n" >&2; \
 			exit 1; \
 		fi; \
@@ -117,7 +117,14 @@ $(idir):
 
 ##############
 #   REMOVE   #
-uninstall:
+u_force=0
+# uforce=1 changes all errors into warnings. uninstall will error on any
+# inconsistency (except /etc), this won't be changed.
+uninstall: 
+	@if test ! -f $(inst_idx); then \
+		printf "# package $(packagename) is not installed\n" >&2; \
+		exit 1; \
+	fi
 
 
 ##############
