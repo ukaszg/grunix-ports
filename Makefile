@@ -1,6 +1,7 @@
 .PHONY: help clean nuke build list
 
 .DEFAULT_GOAL=install
+SHELL=/bin/mksh
 BUILD_ROOT?=$(CURDIR)
 LOCAL_INSTALL_TO?="${HOME}/.local"
 INSTALL_TO?=$(shell test `id -u` -eq 0 && echo "/" || echo $(LOCAL_INSTALL_TO))
@@ -84,6 +85,7 @@ ls list: $(pkg_path)
 inst_idx=$(BUILD_ROOT)/.installed
 idir=$(BUILD_ROOT)/install_tmp_dir
 attr=user.package
+checksum=sha256sum
 
 inst install:: $(inst_idx)
 
@@ -96,11 +98,13 @@ $(inst_idx): $(inst_idx)$(part)
 		fi; \
 	done
 	@for i in `cat "$<"`;do \
-		setfattr -n $(attr).md5 -v `md5sum "$$i"|cut -d' ' -f1` "$$i"; \
+		setfattr -n $(attr).$(checksum) -v `$(checksum) "$$i"|cut -d' ' -f1` "$$i"; \
 		setfattr -n $(attr).name -v $(name) "$$i"; \
 		setfattr -n $(attr).version -v $(version) "$$i"; \
 	done
-	@mkdir -p "$(INSTALL_TO)"
+	@setfattr -n $(attr).name -v $(name) "$<"
+	@setfattr -n $(attr).version -v $(version) "$<"
+	@-mkdir -p "$(INSTALL_TO)"
 	@mv "$(idir)/"* "$(INSTALL_TO)/"
 	@sed -i -e "s#$(idir)##" "$<"
 	@-rm -rf "$(idir)"
@@ -117,14 +121,20 @@ $(idir):
 
 ##############
 #   REMOVE   #
-u_force=0
-# uforce=1 changes all errors into warnings. uninstall will error on any
-# inconsistency (except /etc), this won't be changed.
+u_force?=0
+# uforce!=0 changes all errors into warnings. uninstall will error on any
+# inconsistency (except /etc), it is meant to be naggy.
 uninstall: 
-	@if test ! -f $(inst_idx); then \
+	@test -f $(inst_idx) || { \
 		printf "# package $(packagename) is not installed\n" >&2; \
 		exit 1; \
-	fi
+	}
+	@for i in `cat $(inst_idx)`; do \
+		test "$(name)"="`getfattr -n $(attr).name \"$$i\"`" && { \
+			printf "# file [$$i] is not marked as belonging to the $(packagename)"; \
+			ifeq (0, $(u_force)) exit 1; endif \
+		}; \
+	done
 
 
 ##############
