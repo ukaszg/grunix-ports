@@ -1,5 +1,4 @@
 PHONY=
-
 .DEFAULT_GOAL=all
 SHELL=/bin/mksh
 BUILD_ROOT?=$(CURDIR)
@@ -10,9 +9,6 @@ INSTALL_TO?=$(shell test `id -u` -eq 0 && echo "/" || echo $(LOCAL_INSTALL_TO))
 #    HELP    #
 PHONY+=help
 help:
-
-mkdir.%:
-	@install -m 700 -d "$@"
 
 ##############
 #  DOWNLOAD  #
@@ -34,19 +30,19 @@ unpack=$(addprefix $W/.unpack.,$(filenames))
 
 prepare:: $(unpack)
 
-$W/.unpack.%.tar.bz2: $(BUILD_ROOT)/%.tar.bz2 mkdir.$W
+$W/.unpack.%.tar.bz2: $(BUILD_ROOT)/%.tar.bz2 $W
 	@bzip2 -d -c "$<" | tar -x -C "$W" -f -
 	@touch "$@"
 
-$W/.unpack.%.tar.gz: $(BUILD_ROOT)/%.tar.gz mkdir.$W
+$W/.unpack.%.tar.gz: $(BUILD_ROOT)/%.tar.gz $W
 	@gzip  -d -c "$<" | tar -x -C "$W" -f -
 	@touch "$@"
 
-$W/.unpack.%.tar.xz: $(BUILD_ROOT)/%.tar.xz mkdir.$W
+$W/.unpack.%.tar.xz: $(BUILD_ROOT)/%.tar.xz $W
 	@xz    -d -c "$<" | tar -x -C "$W" -f -
 	@touch "$@"
 
-$W/.unpack.%.zip: $(BUILD_ROOT)/%.zip mkdir.$W
+$W/.unpack.%.zip: $(BUILD_ROOT)/%.zip $W
 	@unzip -d "$W" "$<"
 	@touch "$@"
 
@@ -57,7 +53,7 @@ $W/.unpack.%.zip: $(BUILD_ROOT)/%.zip mkdir.$W
 w=$W/$(name)-$(version)
 d=$(BUILD_ROOT)/dest
 
-build: prepare mkdir.$d
+build: prepare $d
 
 ##############
 #   PACKAGE  #
@@ -77,7 +73,7 @@ $(pkg_path):
 
 PHONY+=ls list
 ls list: $(pkg_path)
-	@gzip -d -c "$(pkg_path)" | tar tf - | grep -e '.*[^/]$$'
+	@gzip -d -c "$(pkg_path)" | tar tf -
 
 ##############
 #   INSTALL  #
@@ -102,14 +98,14 @@ $(inst_idx): $(inst_idx)$(part)
 		setfattr -n $(attr).version -v $(version) "$$i"; \
 	done
 	@setfattr -n $(attr).version -v $(version) "$<"
-	@-mkdir -p "$(INSTALL_TO)"
+	test -d "$(INSTALL_TO)" || mkdir -p "$(INSTALL_TO)"
 	@mv "$(idir)/"* "$(INSTALL_TO)/"
 	@sed -i -e "s#$(idir)##" "$<"
 	@-rm -rf "$(idir)"
 	@mv "$<" "$@"
 	@-echo "# installed: $(packagename)\n"
 
-$(inst_idx)$(part): mkdir.$(idir) $(pkg_path)
+$(inst_idx)$(part): $(idir) $(pkg_path)
 	@gzip -d -c "$(pkg_path)" | tar -x -p -C "$(idir)" -f -
 	@find -H "$(idir)" -type f > "$@$(part)"
 	@mv "$@$(part)" "$@"
@@ -132,6 +128,8 @@ remove uninstall:
 		}; \
 	done
 
+$W $d $(idir):
+	@install -m 700 -d "$@"
 
 ##############
 #    CLEAN   #
