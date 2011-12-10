@@ -7,11 +7,10 @@ source=http://example.net/$(name)-$(version).tar.gz
 include ../Makefile
 
 build:
-	cd $w && ./configure \ 
-		--prefix=/ \ 
-		--disable-shared \ 
-		--disable-nls \ 
+	cd $w && ./configure \
+		--prefix=/ \
+		--disable-shared \
+		--disable-nls \
 		--mandir=/var/man
-	cd $w && make
-	DESTDIR=$d cd $w && make install
+	cd $w && make && make install DESTDIR=$d 
 
