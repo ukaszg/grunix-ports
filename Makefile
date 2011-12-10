@@ -1,6 +1,6 @@
-.PHONY: help clean nuke build list
+PHONY=
 
-.DEFAULT_GOAL=install
+.DEFAULT_GOAL=all
 SHELL=/bin/mksh
 BUILD_ROOT?=$(CURDIR)
 LOCAL_INSTALL_TO?="${HOME}/.local"
@@ -8,7 +8,11 @@ INSTALL_TO?=$(shell test `id -u` -eq 0 && echo "/" || echo $(LOCAL_INSTALL_TO))
 
 ##############
 #    HELP    #
+PHONY+=help
 help:
+
+mkdir.%:
+	@install -m 700 -d "$@"
 
 ##############
 #  DOWNLOAD  #
@@ -30,22 +34,19 @@ unpack=$(addprefix $W/.unpack.,$(filenames))
 
 prepare:: $(unpack)
 
-$W:
-	@install -m 700 -d "$@"
-
-$W/.unpack.%.tar.bz2: $(BUILD_ROOT)/%.tar.bz2 $W
+$W/.unpack.%.tar.bz2: $(BUILD_ROOT)/%.tar.bz2 mkdir.$W
 	@bzip2 -d -c "$<" | tar -x -C "$W" -f -
 	@touch "$@"
 
-$W/.unpack.%.tar.gz: $(BUILD_ROOT)/%.tar.gz $W
+$W/.unpack.%.tar.gz: $(BUILD_ROOT)/%.tar.gz mkdir.$W
 	@gzip  -d -c "$<" | tar -x -C "$W" -f -
 	@touch "$@"
 
-$W/.unpack.%.tar.xz: $(BUILD_ROOT)/%.tar.xz $W
+$W/.unpack.%.tar.xz: $(BUILD_ROOT)/%.tar.xz mkdir.$W
 	@xz    -d -c "$<" | tar -x -C "$W" -f -
 	@touch "$@"
 
-$W/.unpack.%.zip: $(BUILD_ROOT)/%.zip $W
+$W/.unpack.%.zip: $(BUILD_ROOT)/%.zip mkdir.$W
 	@unzip -d "$W" "$<"
 	@touch "$@"
 
@@ -56,10 +57,7 @@ $W/.unpack.%.zip: $(BUILD_ROOT)/%.zip $W
 w=$W/$(name)-$(version)
 d=$(BUILD_ROOT)/dest
 
-build: prepare $d
-
-$d:
-	@install -m 700 -d "$@"
+build: prepare mkdir.$d
 
 ##############
 #   PACKAGE  #
@@ -67,7 +65,7 @@ pkgext=pkg
 packagename=$(name)-$(version).$(build).$(pkgext)
 pkg_path=$(BUILD_ROOT)/$(packagename)
 
-pkg package:: $(pkg_path)
+all pkg package:: $(pkg_path)
 
 $(pkg_path):
 	@-echo "# building: $(packagename)"
@@ -77,6 +75,7 @@ $(pkg_path):
 	@mv "$(pkg_path)$(part)" "$(pkg_path)"
 	@-echo "# created: $(packagename)"
 
+PHONY+=ls list
 ls list: $(pkg_path)
 	@gzip -d -c "$(pkg_path)" | tar tf - | grep -e '.*[^/]$$'
 
@@ -110,20 +109,18 @@ $(inst_idx): $(inst_idx)$(part)
 	@mv "$<" "$@"
 	@-echo "# installed: $(packagename)\n"
 
-$(inst_idx)$(part): $(idir) $(pkg_path)
-	@gzip -d -c "$(pkg_path)" | tar -x -p -C "$<" -f -
-	@find -H "$<" -type f > "$@$(part)"
+$(inst_idx)$(part): mkdir.$(idir) $(pkg_path)
+	@gzip -d -c "$(pkg_path)" | tar -x -p -C "$(idir)" -f -
+	@find -H "$(idir)" -type f > "$@$(part)"
 	@mv "$@$(part)" "$@"
-
-$(idir):
-	@install -m 700 -d "$@"
 
 ##############
 #   REMOVE   #
 u_force?=0
 # uforce!=0 changes all errors into warnings. uninstall will error on any
 # inconsistency (except /etc), it is meant to be naggy.
-uninstall: 
+PHONY+=remove uninstall
+remove uninstall: 
 	@test -f $(inst_idx) || { \
 		echo "# package $(packagename) is not installed" >&2; \
 		exit 1; \
@@ -138,6 +135,7 @@ uninstall:
 
 ##############
 #    CLEAN   #
+PHONY+=clean nuke
 clean:
 	@-rm -rf *.tar.gz$(part) *.tar.bz2$(part) *.tar.xz$(part) *.zip$(part)
 	@-rm -rf "$d" "$d$(part)" "$W" "$W$(part)" "$(idir)" "$(idir)$(part)" \
@@ -146,3 +144,4 @@ clean:
 nuke: clean
 	@-rm -rf $(files) $(pkg_path)
 
+.PHONY: $(PHONY)
