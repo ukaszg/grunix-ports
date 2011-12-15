@@ -1,15 +1,13 @@
-.PHONY: clean nuke help ls list
+.PHONY: clean nuke ls list
 .DEFAULT_GOAL=all
+.SUFFIXES:
+MAKEFLAGS=-j 1
 SHELL=/bin/ash
 
 W=$(CURDIR)/work
 d=$(CURDIR)/out
 part=.part
-# Most tarballs have "name-version" directory packed inside.
-# It's nice to type less, most of the time. Do not use it in this file.
-w=$W/$(name)-$(version)
 
-.PHONY: clean nuke ls list
 $W $d:
 	@install -m 700 -d "$@"
 
@@ -21,7 +19,7 @@ all pkg package:: $(pkg)
 
 $(pkg):
 	$(MAKE) build
-	cd "$d" && tar -c -p -f - ./* | gzip > "$(CURDIR)/$(pkg)$(part)"
+	@cd "$d" && tar -c -p -f - ./* | gzip > "$(CURDIR)/$(pkg)$(part)"
 	@-rm -rf "$d" "$W"
 	@mv "$(pkg)$(part)" "$(pkg)"
 	@-echo "# created: $(pkg)"
@@ -72,3 +70,7 @@ clean:
 
 nuke: clean
 	@-rm -rf $(files) $(pkg)
+
+##############
+# BUILD VARS #
+w=$W/$(name)-$(version) 
