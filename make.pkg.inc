@@ -1,4 +1,4 @@
-.PHONY: clean nuke help ls list
+.PHONY: clean nuke help ls list clean_old
 .DEFAULT_GOAL=all
 SHELL=/bin/ash
 
@@ -20,7 +20,7 @@ pkg=$(name)-$(version).$(build).pkg
 all pkg package:: $(pkg)
 
 $(pkg):
-	$(MAKE) build
+	$(MAKE) clean build
 	cd "$d" && tar -c -p -f - ./* | gzip > "$(CURDIR)/$(pkg)$(part)"
 	@-rm -rf "$d" "$W"
 	@mv "$(pkg)$(part)" "$(pkg)"
@@ -67,8 +67,12 @@ dl download:: $(files)
 
 ##############
 #    CLEAN   #
+OLD_PKG_VERSIONS=$(filter-out $(pkg),$(wildcard *.pkg) )
 clean:
 	@-rm -rf *.tar.gz$(part) *.tar.bz2$(part) *.tar.xz$(part) *.zip$(part) "$d" "$W"
 
-nuke: clean
+cleanold:
+	@-rm -rf $(OLD_PKG_VERSIONS)
+
+nuke: clean cleanold
 	@-rm -rf $(files) $(pkg)
