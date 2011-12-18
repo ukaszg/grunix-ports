@@ -21,9 +21,9 @@ all pkg package:: $(pkg)
 
 $(pkg):
 	$(MAKE) clean build
-	cd "$d" && tar -c -p -f - ./* | gzip > "$(CURDIR)/$(pkg)$(part)"
+	cd "$d" && tar -c -p -f - ./* | gzip > "$(CURDIR)/$(pkg).part"
 	@-rm -rf "$d" "$W"
-	@mv "$(pkg)$(part)" "$(pkg)"
+	@mv "$(pkg).part" "$(pkg)"
 	@-echo "# created: $(pkg)"
 
 ls list: $(pkg)
@@ -62,14 +62,14 @@ $(unpack_prefix)%.zip: %.zip $W
 dl download:: $(files)
 
 %.tar.bz2 %.tar.gz %.tar.xz %.zip:
-	@wget -c -O "$@$(part)" "$(filter %$(notdir $@),$(source))"
-	@mv "$@$(part)" "$@"
+	@wget -c -O "$@.part" "$(filter %$(notdir $@),$(source))"
+	@mv "$@.part" "$@"
 
 ##############
 #    CLEAN   #
 OLD_PKG_VERSIONS=$(filter-out $(pkg),$(wildcard *.pkg) )
 clean:
-	@-rm -rf *.tar.gz$(part) *.tar.bz2$(part) *.tar.xz$(part) *.zip$(part) "$d" "$W"
+	@-rm -rf *.tar.gz.part *.tar.bz2.part *.tar.xz.part *.zip.part "$d" "$W"
 
 cleanold:
 	@-rm -rf $(OLD_PKG_VERSIONS)
