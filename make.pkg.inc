@@ -20,7 +20,8 @@ pkg=$(name)-$(version).$(build).pkg
 all pkg package:: $(pkg)
 
 $(pkg):
-	$(MAKE) clean build
+	@-mv build.log build.log.1
+	$(MAKE) clean build 1>build.log
 	cd "$d" && tar -c -p -f - ./* | gzip > "$(CURDIR)/$(pkg).part"
 	@-rm -rf "$d" "$W"
 	@mv "$(pkg).part" "$(pkg)"
