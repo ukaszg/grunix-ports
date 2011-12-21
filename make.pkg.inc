@@ -42,20 +42,12 @@ unpack=$(addprefix $(unpack_prefix),$(files))
 
 prepare:: $(unpack)
 
-$(unpack_prefix)%.tar.bz2: %.tar.bz2 $W
-	@bzip2 -d -c "$<" | tar -x -C "$W" -f -
-	@touch "$@"
-
-$(unpack_prefix)%.tar.gz: %.tar.gz $W
-	@gzip  -d -c "$<" | tar -x -C "$W" -f -
-	@touch "$@"
-
-$(unpack_prefix)%.tar.xz: %.tar.xz $W
-	@xz    -d -c "$<" | tar -x -C "$W" -f -
-	@touch "$@"
-
 $(unpack_prefix)%.zip: %.zip $W
 	@unzip -d "$W" "$<"
+	@touch "$@"
+
+$(unpack_prefix)%: % $W
+	@bsdtar -x -p -C "$W" -f "$<" 
 	@touch "$@"
 
 ##############
