@@ -20,8 +20,9 @@ all pkg package:: $(pkg)
 include ../make.ea.inc
 
 $(pkg):
-	@-rm -f build.log
+	@-echo "# building: $@"
 	@$(MAKE) clean build 1> build.log
+	@-echo "# writing metadata: $@"
 	@cd "$d" && for f in `find -H -type f`; do \
 		$(call seteanam_f_n,$${f},$(name)); \
 		$(call seteaver_f_v,$${f},$(version)); \
