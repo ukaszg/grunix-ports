@@ -10,4 +10,5 @@ syntax: glob
 */out/*
 */dest/*
 */install_tmp_dir/*
-.installed
+installed.pkg.filelist
+build.log*

@@ -70,7 +70,7 @@ dl download:: $(files)
 #    CLEAN   #
 OLD_PKG_VERSIONS=$(filter-out $(pkg),$(wildcard *.pkg) )
 clean:
-	@-rm -rf *.tar.gz.part *.tar.bz2.part *.tar.xz.part *.zip.part "$d" "$W"
+	@-rm -rf *.tar.gz.part *.tar.bz2.part *.tar.xz.part *.zip.part "$d" "$W" build.log*
 
 cleanold:
 	@-rm -rf $(OLD_PKG_VERSIONS)
