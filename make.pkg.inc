@@ -1,15 +1,12 @@
 .PHONY: clean nuke help ls list clean_old
 .DEFAULT_GOAL=all
-SHELL=/bin/ash
+SHELL=/bin/sh
 
 W=$(CURDIR)/work
 d=$(CURDIR)/out
-part=.part
-# Most tarballs have "name-version" directory packed inside.
-# It's nice to type less, most of the time. Do not use it in this file.
-w=$W/$(name)-$(version)
 
 .PHONY: clean nuke ls list
+.SUFFIXES:
 $W $d:
 	@install -m 700 -d "$@"
 
@@ -19,16 +16,26 @@ pkg=$(name)-$(version).$(build).pkg
 
 all pkg package:: $(pkg)
 
+# since this file will be included from pkg dir
+include ../make.ea.inc
+
 $(pkg):
-	@-mv build.log build.log.1
-	$(MAKE) clean build 1>build.log
-	cd "$d" && tar -c -p -f - ./* | gzip > "$(CURDIR)/$(pkg).part"
+	@-rm -f build.log
+	@$(MAKE) clean build 1> build.log
+	@cd "$d" && for f in `find -H -type f`; do \
+		$(call seteanam_f_n,$${f},$(name)); \
+		$(call seteaver_f_v,$${f},$(version)); \
+		$(call seteasum_f,$${f}); \
+	done
+# bsdtar rocks, it saves all ea info, and restores it with -p
+	@cd "$d" && bsdtar -cpzf "$(CURDIR)/$@.part" ./*
 	@-rm -rf "$d" "$W"
-	@mv "$(pkg).part" "$(pkg)"
-	@-echo "# created: $(pkg)"
+	@$(call seteasum_f,$@.part)
+	@mv "$@.part" "$@"
+	@-echo "# created: $@"
 
 ls list: $(pkg)
-	@gzip -d -c "$(pkg)" | tar tf -
+	@bsdtar -tpf "$<"
 
 ##############
 #    BUILD   #
@@ -69,3 +76,8 @@ cleanold:
 
 nuke: clean cleanold
 	@-rm -rf $(files) $(pkg)
+
+### Variables for use in pkg makefile
+# Most tarballs have "name-version" directory packed inside.
+# It's nice to type less, most of the time. Do not use it in this file.
+w=$W/$(name)-$(version)
