@@ -4,6 +4,7 @@ SHELL=/bin/sh
 
 W=$(CURDIR)/work
 d=$(CURDIR)/out
+name=$(shell basename $(CURDIR))
 
 .PHONY: clean nuke ls list
 .SUFFIXES:

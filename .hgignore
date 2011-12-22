@@ -9,6 +9,6 @@ syntax: glob
 */work/*
 */out/*
 */dest/*
-*/install_tmp_dir/*
-installed.pkg.filelist
+*/?install_tmp_dir/*
+installed.pkg.filelist*
 build.log*

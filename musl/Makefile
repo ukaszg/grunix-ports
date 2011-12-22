@@ -1,4 +1,3 @@
-name=musl
 version=0.8.2
 build=1
 desc=minimalist libc
