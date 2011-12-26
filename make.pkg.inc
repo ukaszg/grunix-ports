@@ -37,7 +37,7 @@ $(pkg):
 	@-echo "# created: $@"
 
 ls list: $(pkg)
-	@bsdtar -tpf "$<"
+	@bsdtar -tpf "$<" | grep -v '/$$'
 
 ##############
 #    BUILD   #
