@@ -26,7 +26,7 @@ $(pkg):
 	@-echo "# writing metadata: $@"
 	@cd "$d" && for f in `find -H -type f`; do \
 		$(call seteanam_f_n,$${f},$(name)); \
-		$(call seteaver_f_v,$${f},$(version)); \
+		$(call seteaver_f_v,$${f},$(version).$(build)); \
 		$(call seteasum_f,$${f}); \
 	done
 # bsdtar rocks, it saves all ea info, and restores it with -p
