@@ -14,19 +14,21 @@ $W $d:
 ##############
 #   PACKAGE  #
 pkg=$(name)-$(version).$(build).pkg
+# macros that help with ea-related stuff
+attr?=user.package
+checksum?=sha256sum
+counthash_f=$(checksum) $(1)|cut -d' ' -f1
+seteasum_f=setfattr -n $(attr).$(checksum) -v `$(counthash_f)` "$(1)" 2>/dev/null
 
 all pkg package:: $(pkg)
-
-# since this file will be included from pkg dir
-include ../make.ea.inc
 
 $(pkg):
 	@-echo "# building: $@"
 	@$(MAKE) clean build 1> build.log
 	@-echo "# writing metadata: $@"
 	@cd "$d" && for f in `find -H -type f`; do \
-		$(call seteanam_f_n,$${f},$(name)); \
-		$(call seteaver_f_v,$${f},$(version).$(build)); \
+		setfattr -n $(attr).name -v $(name) "$${f}" 2>/dev/null; \
+		setfattr -n $(attr).version -v $(version).$(build) "$${f}" 2>/dev/null; \
 		$(call seteasum_f,$${f}); \
 	done
 # bsdtar rocks, it saves all ea info, and restores it with -p
