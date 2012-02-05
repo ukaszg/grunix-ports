@@ -12,3 +12,4 @@ syntax: glob
 */?install_tmp_dir/*
 installed.pkg.filelist*
 build.log*
+db/*

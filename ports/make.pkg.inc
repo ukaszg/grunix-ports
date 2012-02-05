@@ -1,31 +1,58 @@
-.PHONY: clean nuke help ls list clean_old
 .DEFAULT_GOAL=all
 SHELL=/bin/sh
 
-W=$(CURDIR)/work
-d=$(CURDIR)/out
-name=$(shell basename $(CURDIR))
-
-.PHONY: clean nuke ls list
-.SUFFIXES:
-$W $d:
-	@install -m 700 -d "$@"
-
-##############
-#   PACKAGE  #
-pkg=$(name)-$(version).$(build).pkg
-# macros that help with ea-related stuff
 attr?=user.package
 checksum?=sha256sum
+
+W=$(CURDIR)/work
+d=$(CURDIR)/out
+db_dir=$(CURDIR)/../../db/$(name)
+root=$(shell echo "${HOME}/.local/")
+
+name=$(shell basename $(CURDIR))
+pkg=$(name)-$(version).$(build).pkg
+
+# macros that help with ea-related stuff
 counthash_f=$(checksum) $(1)|cut -d' ' -f1
 seteasum_f=setfattr -n $(attr).$(checksum) -v `$(counthash_f)` "$(1)" 2>/dev/null
 
+.PHONY: clean nuke ls list
+.SUFFIXES:
+
+$W $d $(db_dir):
+	@install -m 700 -d "$@"
+
+$(root):
+	@install -m 755 -d "$@"
+
+##############
+#   INSTALL  #
+install: $(pkg) $(db_dir) $(root)
+	@test -f $(db_dir)/filelist && { \
+		echo "# looks like $(name) is already installed:" >&2; \
+		test "x`cat $(db_dir)/version`" != "x$(version).$(build)" && { \
+			echo "# an upgrade is avaliable: `cat $(db_dir)/version` -> $(version).$(build)" >&2; \
+			echo "# run $(MAKE) upgrade " >&2; \
+		} \
+		exit 1; \
+	}
+	@-echo "# installing: $<" >&2
+	@$(MAKE) ls > filelist.part
+	@echo "$(version).$(build)" > version.part
+	$(call seteasum_f,filelist)
+	$(call seteasum_f,version)
+	@bsdtar -x -p -C "$(root)" -f "$@"
+	@mv filelist.part $(db_dir)/filelist
+	@mv version.part $(db_dir)/version
+
+##############
+#   PACKAGE  #
 all pkg package:: $(pkg)
 
 $(pkg):
-	@-echo "# building: $@"
+	@-echo "# building: $@" >&2
 	@$(MAKE) clean build 1> build.log
-	@-echo "# writing metadata: $@"
+	@-echo "# writing metadata: $@" >&2
 	@cd "$d" && for f in `find -H -type f`; do \
 		setfattr -n $(attr).name -v $(name) "$${f}" 2>/dev/null; \
 		setfattr -n $(attr).version -v $(version).$(build) "$${f}" 2>/dev/null; \
@@ -36,10 +63,10 @@ $(pkg):
 	@-rm -rf "$d" "$W"
 	@$(call seteasum_f,$@.part)
 	@mv "$@.part" "$@"
-	@-echo "# created: $@"
+	@-echo "# created: $@" >&2
 
 ls list: $(pkg)
-	@bsdtar -tpf "$<" | grep -v '/$$'
+	@bsdtar -tpf "$<" | grep -v '/$$' | sed -e 's#\./##'
 
 ##############
 #    BUILD   #
