@@ -23,31 +23,41 @@ seteasum_f=setfattr -n $(attr).$(checksum) -v `$(counthash_f)` "$(1)" 2>/dev/nul
 .PHONY: clean nuke ls list
 .SUFFIXES:
 
-$W $d $(db_dir):
+$W $d:
 	@install -m 700 -d "$@"
 
 $(root):
 	@install -m 755 -d "$@"
 
+installed_version=$(shell test -f "$(db_dir)/version" && cat "$(db_dir)/version" || echo "not installed")
+is_upgradeable=$(shell test "x$(installed_version)" = "x$(version).$(build)" && echo "no" || echo "yes")
+
+##############
+#    REMOVE  #
+remove uninstall:
+	@echo "# removing $(name)" >&2
+
 ##############
 #   INSTALL  #
-install: $(pkg) $(db_dir) $(root)
-	@test -f $(db_dir)/filelist && { \
-		echo "# looks like $(name) is already installed:" >&2; \
-		test "x`cat $(db_dir)/version`" != "x$(version).$(build)" && { \
-			echo "# an upgrade is avaliable: `cat $(db_dir)/version` -> $(version).$(build)" >&2; \
-			echo "# run $(MAKE) upgrade " >&2; \
-		} \
-		exit 1; \
-	}
+ifneq "$(installed_version)" "not installed"
+ifeq "$(is_upgradeable)" "yes" 
+install: remove
+endif
+endif
+
+install: $(pkg) $(root)
+	@test ! -d $(db_dir) || { \
+		echo "# $(name) is already installed" >&2; exit 1; }
 	@-echo "# installing: $<" >&2
 	@$(MAKE) ls > filelist.part
 	@echo "$(version).$(build)" > version.part
-	$(call seteasum_f,filelist)
-	$(call seteasum_f,version)
-	@bsdtar -x -p -C "$(root)" -f "$@"
-	@mv filelist.part $(db_dir)/filelist
-	@mv version.part $(db_dir)/version
+	@$(call seteasum_f,filelist.part)
+	@$(call seteasum_f,version.part)
+	@bsdtar -x -p -C "$(root)" -f "$(pkg)"
+	@mv filelist.part filelist
+	@mv version.part version
+	@mkdir -p $(db_dir)
+	@install -m 600 version filelist $(db_dir)/ && rm -f filelist version
 
 ##############
 #   PACKAGE  #
