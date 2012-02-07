@@ -8,8 +8,6 @@ syntax: glob
 *.swp
 */work/*
 */out/*
-*/dest/*
-*/?install_tmp_dir/*
-installed.pkg.filelist*
-build.log*
+build.log
+build.err
 db/*
