@@ -103,12 +103,11 @@ dl download:: $(files)
 
 ##############
 #    CLEAN   #
-OLD_PKG_VERSIONS=$(filter-out $(pkg),$(wildcard *.pkg) )
 clean:
-	@-rm -rf *.part "$d" "$W" build.log* 
+	@-rm -rf *.part "$d" "$W" build.log build.err
 
 cleanold:
-	@-rm -rf $(OLD_PKG_VERSIONS)
+	@-rm -rf $(filter-out $(pkg),$(wildcard *.pkg) )
 
 nuke: clean cleanold
 	@-rm -rf $(files) $(pkg)
