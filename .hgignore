@@ -11,3 +11,4 @@ syntax: glob
 build.log
 build.err
 db/*
+*.sh
