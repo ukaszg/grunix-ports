@@ -49,7 +49,7 @@ install: $(pkg) $(root)
 	@test ! -d $(db_dir) || { \
 		echo "# $(name) is already installed" >&2; exit 1; }
 	@-echo "# installing: $<" >&2
-	@$(MAKE) ls > filelist.part
+	@bsdtar -t -f "$(pkg)" | sed -e 's#^\./##' > filelist.part
 	@echo "$(version).$(build)" > version.part
 	@$(call seteasum_f,filelist.part)
 	@$(call seteasum_f,version.part)
@@ -81,7 +81,7 @@ $(pkg):
 	@-echo "# created: $@" >&2
 
 ls list: $(pkg)
-	@bsdtar -tpf "$<" | grep -v '/$$' | sed -e 's#\./##'
+	@bsdtar -t -v -f "$<" | grep -v '/$$' | sed -e 's#\./##'
 
 ##############
 #    BUILD   #
