@@ -51,7 +51,8 @@ install: $(pkg) $(root)
 	@test ! -d $(db_dir) || { \
 		echo "# $(name) is already installed" >&2; exit 1; }
 	@-echo "# installing: $<" >&2
-	@bsdtar -t -f "$(pkg)" | sed -e 's#^\./##' | grep -v "/[ \t]*$$" > filelist.part
+	@bsdtar -t -f "$(pkg)" | sed -e 's#^\./##' -e 's#^#$(root)#' | \
+		grep -v "/[ \t]*$$" > filelist.part
 	@echo "$(version).$(build)" > version.part
 	@$(call seteasum_f,filelist.part)
 	@$(call seteasum_f,version.part)
