@@ -36,7 +36,7 @@ is_upgradeable=$(shell test "x$(installed_version)" = "x$(version).$(build)" && 
 
 ##############
 #    REMOVE  #
-remove uninstall:
+rm remove uninstall:
 	@echo "# removing $(name)" >&2
 
 ##############
