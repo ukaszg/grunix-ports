@@ -7,7 +7,11 @@ checksum?=sha256sum
 W=$(CURDIR)/work
 d=$(CURDIR)/out
 db_dir=$(CURDIR)/../../db/$(name)
+ifeq ($(shell id -u),0)
+root=/
+else
 root=$(shell echo "${HOME}/.local/")
+endif
 
 name=$(shell basename $(CURDIR))
 pkg=$(name)-$(version).$(build).pkg
