@@ -58,7 +58,7 @@ install: $(pkg) $(root)
 	@bsdtar -x -p -C "$(root)" -f "$(pkg)"
 	@mv filelist.part filelist
 	@mv version.part version
-	@mkdir -p $(db_dir)
+	@install -m 700 -d $(db_dir)
 	@install -m 600 version filelist $(db_dir)/ && rm -f filelist version
 
 ##############
