@@ -29,8 +29,10 @@ $W $d:
 $(root):
 	@install -m 755 -d "$@"
 
-installed_version=$(shell test -f "$(db_dir)/version" && cat "$(db_dir)/version" || echo "not installed")
-is_upgradeable=$(shell test "x$(installed_version)" = "x$(version).$(build)" && echo "no" || echo "yes")
+installed_version=$(shell test -f "$(db_dir)/version" && \
+	 cat "$(db_dir)/version" || echo "not installed")
+is_upgradeable=$(shell test "x$(installed_version)" = "x$(version).$(build)" && \
+	 echo "no" || echo "yes")
 
 ##############
 #    REMOVE  #
