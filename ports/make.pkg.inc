@@ -55,7 +55,8 @@ all pkg package:: $(pkg)
 
 $(pkg):
 	@-echo "# building: $@" >&2
-	@$(MAKE) clean build 1> build.log
+	@$(MAKE) clean
+	@$(MAKE) build 2>&1 1>build.log | tee build.err 
 	@-echo "# writing metadata: $@" >&2
 	@cd "$d" && for f in `find -H -type f`; do \
 		setfattr -n $(attr).name -v $(name) "$${f}" 2>/dev/null; \
