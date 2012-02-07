@@ -37,7 +37,10 @@ is_upgradeable=$(shell test "x$(installed_version)" = "x$(version).$(build)" && 
 ##############
 #    REMOVE  #
 rm remove uninstall:
+	@test -d $(db_dir) || { echo "# $(name) is not installed" >&2; exit 1; }
 	@echo "# removing $(name)" >&2
+	@cat $(db_dir)/filelist | xargs rm -f
+	@rm -rf $(db_dir)
 
 ##############
 #   INSTALL  #
