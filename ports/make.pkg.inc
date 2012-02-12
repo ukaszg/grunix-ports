@@ -79,8 +79,7 @@ $(pkg):
 		setfattr -n $(attr).version -v $(version).$(build) "$${f}" 2>/dev/null; \
 		$(call seteasum_f,$${f}); \
 	done
-# commented out till libarchive folks fix issue 239
-#@test ! -d "$d/bin" || chmod a-w "$d/bin/"*
+	@test ! -d "$d/bin" || chmod 755 "$d/bin/"*
 # bsdtar rocks, it saves all ea info, and restores it with -p
 	@cd "$d" && bsdtar -cpzf "$(CURDIR)/$@.part" ./*
 	@-rm -rf "$d" "$W"
